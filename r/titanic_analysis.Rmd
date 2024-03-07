@@ -1,0 +1,289 @@
+---
+title: "ST2195 Assignment 7"
+author: "Lucas Rodriguez Cuitiño"
+date: "2024-02-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load necessary libraries
+
+```{r load-libraries, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+```
+
+## Read the dataset
+
+```{r}
+df <- read.csv("data/titanic.csv")
+
+# Convert df columns to factors
+df$Sex <- as.factor(df$Sex)
+df$Pclass <- as.factor(df$Pclass)
+df$Survived <- as.factor(df$Survived)
+```
+
+## Question 1: Bar charts to describe the gender, ticket class and survival of the passengers
+
+### Bar chart for gender
+
+```{r}
+gender_plot <- ggplot(df, aes(x = Sex, fill = Sex)) +
+  geom_bar() +
+  labs(title = "Gender",
+       x = "Gender",
+       y = "Count") +
+  theme_minimal()
+gender_plot
+```
+
+### Bar chart for ticket class
+
+```{r}
+ticket_class_plot <- ggplot(df, aes(x = Pclass, fill = Pclass)) +
+  geom_bar() +
+  labs(title = "Ticket class",
+       x = "Ticket class",
+       y = "Count") +
+  theme_minimal()
+ticket_class_plot
+```
+
+### Bar chart for survival status
+
+```{r}
+survival_plot <- ggplot(df, aes(x = Survived, fill = Survived)) +
+  geom_bar() +
+  scale_x_discrete(labels = c("0" = "Not Survived", "1" = "Survived")) +
+  labs(title = "Survival rate",
+       x = "Survival status",
+       y = "Count") +
+  theme_minimal()
+survival_plot
+```
+
+## Question 2: Passengers' age analysis by ticket class and survival status
+
+### Histogram for passengers' age
+
+```{r}
+age_histogram <- ggplot(df, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
+  labs(title = "Age distribution",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+age_histogram
+```
+
+```{r}
+# Summarizing the Age column
+age_summary <- summary(df$Age)
+
+# Converting the summary to a list and creating a data frame
+age_summary_df <- data.frame(as.list(age_summary))
+
+# Printing the summary as a table
+kable(age_summary_df, caption = "Summary of Age")
+```
+
+### Boxplot for age per Ticket Class
+
+```{r}
+age_ticket_class_boxplot <- ggplot(df, aes(x = Pclass, y = Age, fill = Pclass)) +
+  geom_boxplot() +
+  labs(title = "Age by ticket class",
+       x = "Ticket class",
+       y = "Age") +
+  theme_minimal()
+age_ticket_class_boxplot
+```
+
+```{r}
+# Grouping by ticket class and summarizing age, including the number of NAs
+age_ticket_class_summary <- df %>%
+  group_by(Pclass) %>%
+  summarize(
+    Min = min(Age, na.rm = TRUE),
+    `1st.Qu.` = quantile(Age, 0.25, na.rm = TRUE),
+    Median = median(Age, na.rm = TRUE),
+    Mean = mean(Age, na.rm = TRUE),
+    `3rd.Qu.` = quantile(Age, 0.75, na.rm = TRUE),
+    Max = max(Age, na.rm = TRUE),
+    Non_NAs = sum(!is.na(Age)),
+    NAs = sum(is.na(Age))
+  )
+kable(age_ticket_class_summary, caption = "Summary of Age by Ticket Class")
+```
+
+### Boxplot for age per Survival status
+
+```{r}
+age_ticket_class_boxplot <- ggplot(df, aes(x = Survived, y = Age, fill = Survived)) +
+  geom_boxplot() +
+  labs(title = "Age by survival status",
+       x = "Survival status",
+       y = "Age") +
+  theme_minimal()
+age_ticket_class_boxplot
+```
+
+```{r}
+# Grouping by survival status and summarizing age
+age_survival_summary <- df %>%
+  group_by(Survived) %>%
+  summarize(
+    Min = min(Age, na.rm = TRUE),
+    `1st.Qu.` = quantile(Age, 0.25, na.rm = TRUE),
+    Median = median(Age, na.rm = TRUE),
+    Mean = mean(Age, na.rm = TRUE),
+    `3rd.Qu.` = quantile(Age, 0.75, na.rm = TRUE),
+    Max = max(Age, na.rm = TRUE),
+    Non_NAs = sum(!is.na(Age)),
+    NAs = sum(is.na(Age))
+  )
+
+# Printing the summary as a table
+kable(age_survival_summary, caption = "Summary of Age by Survival Status")
+```
+
+## Question 3: Travel fares and free passengers
+
+### Histogram for Travel Fare
+
+```{r}
+fare_histogram <- ggplot(df, aes(x = Fare)) +
+  geom_histogram(binwidth = 10, fill = "steelblue", color = "black", na.rm = TRUE) +
+  labs(title = "Travel fares",
+       x = "Fare",
+       y = "Count") +
+  theme_minimal()
+fare_histogram
+```
+
+```{r}
+# Summarizing the Fare column
+fare_summary <- summary(df$Fare)
+
+# Converting the summary to a list and creating a data frame
+fare_summary_df <- data.frame(as.list(fare_summary))
+
+# Printing the summary as a table
+kable(fare_summary_df, caption = "Summary of fares")
+```
+
+### Table with passenger fare payment status
+
+```{r}
+payment_summary <- df %>%
+  mutate(Payment_Status = ifelse(Fare == 0, "Did Not Pay", "Did Pay")) %>%
+  group_by(Payment_Status) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+
+knitr::kable(payment_summary, caption = "Passengers' Payment summary")
+```
+
+## Question 4: Different visualizations of family size per ticket class
+
+```{r}
+# FamilySize is the sum of siblings/spouses (SibSp), parents/children (Parch), plus one for the passenger themselves
+df$FamilySize <- df$SibSp + df$Parch + 1
+```
+
+```{r}
+# Summarizing each df$Column
+sibsp_summary <- summary(df$SibSp)
+parch_summary <- summary(df$Parch)
+familysize_summary <- summary(df$FamilySize)
+
+# Converting each summary to a list and creating a data frame for each
+sibsp_summary_df <- data.frame(as.list(sibsp_summary))
+parch_summary_df <- data.frame(as.list(parch_summary))
+familysize_summary_df <- data.frame(as.list(familysize_summary))
+
+# Binding the data frames together
+combined_summary_df <- rbind(SibSp = sibsp_summary_df, Parch = parch_summary_df, FamilySize = familysize_summary_df)
+
+# Printing the combined summary as a table
+kable(combined_summary_df, caption = "Summary of SibSp, Parch, and FamilySize")
+```
+
+## Vertical boxplot
+
+```{r}
+family_size_boxplot_default <- ggplot(df, aes(x = Pclass, y = FamilySize, fill = Pclass)) +
+  geom_boxplot() +
+  labs(title = "Family size by ticket class",
+       x = "Ticket class",
+       y = "Family size") +
+  theme_minimal()
+family_size_boxplot_default
+```
+
+## Horizontal boxplot
+
+```{r}
+family_size_boxplot_horizontal <- ggplot(df, aes(y = Pclass, x = FamilySize, fill = Pclass)) +
+  geom_boxplot() +
+  labs(title = "Family size by ticket class",
+       y = "Ticket class",
+       x = "Family size") +
+  theme_minimal()
+family_size_boxplot_horizontal
+```
+
+## Vertical histogram
+
+```{r}
+family_size_histogram_default <- ggplot(df, aes(x = FamilySize, fill = Pclass)) +
+  geom_histogram(binwidth = 1, color = "black") +
+  facet_grid(~ Pclass) +
+  labs(title = "Family size by ticket class",
+       x = "Family size",
+       y = "Count") +
+  theme_minimal()
+family_size_histogram_default
+```
+
+## Horizontal histogram
+
+```{r}
+family_size_histogram_horizontal <- ggplot(df, aes(x = FamilySize, fill = Pclass)) +
+  geom_histogram(binwidth = 1, color = "black") +
+  facet_wrap( ~ Pclass, ncol = 1) +
+  labs(title = "Family size by ticket class",
+       y = "Count",
+       x = "Family size") +
+  theme_minimal()
+family_size_histogram_horizontal
+```
+
+## Vertical violin plot
+
+```{r}
+family_size_violin <- ggplot(df, aes(x = Pclass, y = FamilySize, fill = Pclass)) +
+  geom_violin(trim = FALSE) + # Set trim=FALSE to show the full range of the data
+  labs(title = "Family size by ticket class",
+       x = "Ticket class",
+       y = "Family size") +
+  theme_minimal()
+family_size_violin
+```
+
+## Horizontal violin plot
+
+```{r}
+family_size_violin_horizontal <- ggplot(df, aes(x = FamilySize, y = Pclass, fill = Pclass)) +
+  geom_violin(trim = FALSE) + # Set trim=FALSE to show the full range of the data
+  labs(title = "Family size by ticket class",
+       x = "Family size",
+       y = "Ticket class") +
+  theme_minimal()
+family_size_violin_horizontal
+```
